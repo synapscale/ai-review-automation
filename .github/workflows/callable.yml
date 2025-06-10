@@ -2,10 +2,9 @@ name: AI Review (Reusable)
 
 on:
   workflow_call:
-    inputs:
+    secrets:
       openai_api_key:
         required: true
-        type: string
 
 permissions:
   contents: read
@@ -23,7 +22,7 @@ jobs:
           cache: "pip"
       - run: pip install -r requirements.txt
       - env:
-          OPENAI_API_KEY: ${{ inputs.openai_api_key }}
+          OPENAI_API_KEY: ${{ secrets.openai_api_key }}
           GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: python scripts/ai_orchestrator.py --mode diff > review.md

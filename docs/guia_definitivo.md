@@ -31,6 +31,8 @@ gh secret set OPENAI_API_KEY -b"sk-..."
 
 ## 🔄 2. Integração em outros repositórios (4 formas)
 
+> 📖 **Exemplos completos de workflows:** [`docs/workflow-examples.md`](workflow-examples.md)
+
 ### 2.1 Workflow reutilizável (recomendado – 2 linhas)
 
 ```yaml
