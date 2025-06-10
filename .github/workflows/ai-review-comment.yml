@@ -19,7 +19,7 @@ jobs:
         contains(github.event.comment.body, '/ai-review') &&
         github.event.issue.pull_request
       )
-    uses: synapscale/ai-review-bot/.github/workflows/callable.yml@v2.2
+    uses: synapscale/ai-review-automation/.github/workflows/callable.yml@v2.2
     with:
       openai_api_key: ${{ secrets.OPENAI_API_KEY }}
     secrets:
