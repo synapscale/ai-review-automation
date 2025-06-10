@@ -32,5 +32,5 @@ runs:
     # 4️⃣ Comenta/atualiza o relatório sticky
     - uses: marocchino/sticky-pull-request-comment@v2
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ github.token }}
         path: review.md
