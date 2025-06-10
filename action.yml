@@ -13,11 +13,13 @@ runs:
         python-version: '3.11'
         cache: 'pip'
     - run: pip install -r requirements.txt
+      shell: bash
     - env:
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       run: python scripts/ai_orchestrator.py --mode diff > review.md
+      shell: bash
     - uses: marocchino/sticky-pull-request-comment@v2
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

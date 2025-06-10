@@ -14,17 +14,20 @@ Repositório para automação de *code review* usando Cursor + Copilot + GPT‑4
 ## 🚀 Instalação local
 
 1. Clone o repositório:
+
 ```bash
 git clone <repository-url>
 cd ai-review-automation
 ```
 
 2. Instale as dependências:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 3. Configure sua chave da OpenAI:
+
 ```bash
 cp .env.example .env
 # Edite o arquivo .env e adicione sua chave OpenAI
@@ -32,6 +35,7 @@ export OPENAI_API_KEY=sk-...
 ```
 
 4. Execute o bot:
+
 ```bash
 python scripts/ai_orchestrator.py --mode diff
 ```
@@ -50,6 +54,7 @@ OPENAI_MODEL=gpt-4o-mini
 ### GitHub Actions (Recomendado)
 
 Adicione no seu workflow `.github/workflows/ai-review.yml`:
+
 ```yaml
 name: AI Code Review
 on:
@@ -66,6 +71,7 @@ jobs:
 ### Action Composite
 
 Você também pode usar como uma action composite:
+
 ```yaml
 - uses: <org>/ai-review-bot@v2.1
   with:
@@ -77,7 +83,8 @@ Você também pode usar como uma action composite:
 - `--mode diff`: Analisa diferenças git (padrão)
 - `--mode file`: Analisa arquivos específicos
 
-### Exemplos:
+### Exemplos
+
 ```bash
 # Analisar diff staged
 python scripts/ai_orchestrator.py --mode diff
