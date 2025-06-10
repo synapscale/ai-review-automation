@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AI Review (staged diff)",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "scripts/ai_orchestrator.py",
+        "--mode",
+        "diff"
+      ],
+      "presentation": { "reveal": "always" },
+      "problemMatcher": []
+    }
+  ]
+}
