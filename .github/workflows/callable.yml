@@ -15,17 +15,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣  Checkout da HEAD da PR (repo + branch do autor/fork)
       - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref:        ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0   # garante diff completo
+
+      # 2️⃣  Ambiente Python
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"
+          cache: pip
+
+      # 3️⃣  Dependências
       - run: pip install -r requirements.txt
-      - env:
+
+      # 4️⃣  Executar orquestrador
+      - name: Run AI Orchestrator
+        env:
           OPENAI_API_KEY: ${{ secrets.openai_api_key }}
           GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: python scripts/ai_orchestrator.py --mode diff > review.md
+
+      # 5️⃣  Comentar ou atualizar comentário “sticky”
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
