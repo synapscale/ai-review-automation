@@ -1,27 +1,25 @@
-name: 'ai-review-bot'
-description: 'Composite action para revisão de código com GPT-4'
+name: ai-review-bot
+description: Composite Action – GPT-4 code review
 
 inputs:
   openai_api_key:
     required: true
-    description: 'OpenAI API Key'
+    description: OpenAI API Key
 
 runs:
-  using: 'composite'
+  using: composite
   steps:
-    # 1️⃣ O workspace já contém o repositório do chamador.
-    # Precisamos apenas instalar deps + rodar o script DA ACTION.
-
+    # Ambiente Python
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: 3.11
         cache: pip
 
-    # 2️⃣ Instala requirements que estão na pasta da action
+    # Instalar deps do bot
     - run: pip install -r "${{ github.action_path }}/requirements.txt"
       shell: bash
 
-    # 3️⃣ Executa o orquestrador usando caminho absoluto da action
+    # Rodar orquestrador
     - env:
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -29,7 +27,7 @@ runs:
       run: python "${{ github.action_path }}/scripts/ai_orchestrator.py" --mode diff > review.md
       shell: bash
 
-    # 4️⃣ Comenta/atualiza o relatório sticky
+    # Comentário sticky
     - uses: marocchino/sticky-pull-request-comment@v2
       with:
         GITHUB_TOKEN: ${{ github.token }}
