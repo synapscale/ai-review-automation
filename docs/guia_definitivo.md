@@ -9,8 +9,8 @@
 | Python | 3.11+ |
 | GitHub Actions Runner | ubuntu‑latest ou self‑hosted |
 | OpenAI Python SDK | >= 1.15.0 (já no requirements.txt) |
-| Cursor IDE | build ≥ 2025‑05 |
-| GitHub Copilot (extensão) | qualquer |
+| Cursor IDE | Qualquer versão atual |
+| GitHub Copilot (extensão) | Qualquer |
 
 ## 🚀 1. Inicialização do repositório ai‑review‑bot
 
@@ -36,9 +36,15 @@ gh secret set OPENAI_API_KEY -b"sk-..."
 ```yaml
 # .github/workflows/ai-review.yml
 name: AI Review
-uses: <org>/ai-review-bot/.github/workflows/callable.yml@v2.1
-with:
-  openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  ai-review:
+    uses: <org>/ai-review-bot/.github/workflows/callable.yml@v2.1
+    with:
+      openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 **💡 Ideal quando você quer atualizar todos os projetos trocando só a tag.**
@@ -46,9 +52,10 @@ with:
 ### 2.2 Action do Marketplace (se publicar action.yml)
 
 ```yaml
-- uses: <org>/ai-review-bot@v2.1
-  with:
-    openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+steps:
+  - uses: <org>/ai-review-bot@v2.1
+    with:
+      openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 ### 2.3 Copiando o workflow pronto
@@ -105,11 +112,12 @@ jq '.tasks[0].args[0]="external/ai-review-bot/scripts/ai_orchestrator.py"' \
 
 | O que mudar | Onde alterar |
 |-------------|--------------|
-| Tam. máximo do diff | MAX_CHARS em ai_orchestrator.py |
-| Temperatura do modelo | parâmetro temperature |
-| Línguas adicionais | função lang (extensão de arquivo) |
-| Prompt padrão | constante SYSTEM_PROMPT |
+| Tam. máximo do diff | `MAX_CHARS = 12_000` em ai_orchestrator.py |
+| Temperatura do modelo | `temperature=0.2` em função call_openai |
+| Modelo OpenAI | `MODEL = "gpt-4o-mini"` ou via env OPENAI_MODEL |
+| Prompt padrão | constante `SYSTEM_PROMPT` |
 | Dependências extras | requirements.txt + pip install no workflow |
+| Timeout de retry | Loop range(3) na função call_openai |
 
 ## 🔧 6. Manutenção & Upgrade
 
@@ -180,3 +188,7 @@ Path(os.getenv('GITHUB_STEP_SUMMARY')).write_text(f"## Tokens usados\n{usage}")
 A cada fase concluída ➜ abrir issue milestone no repo‑bot com o checklist acima.
 
 ---
+
+🎉 **Parabéns!** Agora você tem um roteiro completo – da publicação à personalização – para executar revisões de IA de ponta a ponta em qualquer stack e qualquer fluxo (CLI, CI, Cursor).
+
+Caso surja um cenário não coberto aqui, peça e evoluímos juntos 😉
