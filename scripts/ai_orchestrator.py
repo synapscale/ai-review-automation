@@ -5,14 +5,17 @@
 - Retries exponenciais para falhas de API
 - Escreve step summary em CI
 """
-import os, sys, time, argparse
+import argparse
+import os
+import sys
+import time
 from pathlib import Path
 from typing import List
 
+import openai
+from dotenv import load_dotenv
 from git import Repo
 from git.exc import GitCommandError
-from dotenv import load_dotenv
-import openai
 
 # ─── Config ────────────────────────────────────────────────────────────────
 load_dotenv()
@@ -23,18 +26,25 @@ openai.api_key = OPENAI_API_KEY
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 MAX_CHARS = 12_000  # ~8 k tokens
 
-SYSTEM_PROMPT = """Você é um revisor sênior para projetos Node (frontend) e Python (backend).
+SYSTEM_PROMPT = """Você é um revisor sênior para projetos Node (frontend) \
+e Python (backend).
 1. Identifique bugs, vulnerabilidades e breaking changes.
 2. Sugira refatorações (Clean Code, PEP 8, ESLint).
 3. Sugira testes automatizados.
 Saída em Markdown com seções: **Bugs · Melhorias · Testes · TL;DR**.
 """.strip()
 
+
 # ─── Helpers ───────────────────────────────────────────────────────────────
+
+
 def chunk(text: str, length: int) -> List[str]:
+    """Divide texto em chunks de tamanho específico."""
     return [text[i:i+length] for i in range(0, len(text), length)]
 
+
 def call_openai(prompt: str) -> str:
+    """Chama a API da OpenAI com retry exponencial."""
     for attempt in range(3):
         try:
             resp = openai.chat.completions.create(
@@ -46,14 +56,20 @@ def call_openai(prompt: str) -> str:
                 temperature=0.2,
                 max_tokens=1200,
             )
-            return resp.choices[0].message.content.strip()
-        except openai.OpenAIError as err:
+            content = resp.choices[0].message.content
+            return content.strip() if content else ""
+        except openai.OpenAIError:
             if attempt == 2:
                 raise
             time.sleep(2 ** attempt)
+    return ""
+
 
 # ─── Diff capture ─────────────────────────────────────────────────────────
+
+
 def get_diff(repo: Repo) -> str:
+    """Captura diff do git (staged ou entre commits)."""
     try:
         diff = repo.git.diff("--cached")
         if diff:
@@ -65,17 +81,27 @@ def get_diff(repo: Repo) -> str:
         return repo.git.diff(f"{base}...{head}")
     return ""
 
+
 def review_diff(diff: str) -> str:
+    """Revisa diff usando OpenAI, fragmentando se necessário."""
     if len(diff) <= MAX_CHARS:
-        return call_openai(f"Revise o diff a seguir:\n```diff\n{diff}\n```")
+        prompt = f"Revise o diff a seguir:\n```diff\n{diff}\n```"
+        return call_openai(prompt)
     sections = []
     for part in chunk(diff, MAX_CHARS):
-        sections.append(call_openai(f"Revise esta parte do diff:\n```diff\n{part}\n```"))
+        prompt = f"Revise esta parte do diff:\n```diff\n{part}\n```"
+        sections.append(call_openai(prompt))
     combined = "\n\n".join(sections)
-    return call_openai("Consolide o relatório a seguir em um único resumo:\n" + combined)
+    consolidate_prompt = ("Consolide o relatório a seguir em um único "
+                          f"resumo:\n{combined}")
+    return call_openai(consolidate_prompt)
+
 
 # ─── CLI ──────────────────────────────────────────────────────────────────
+
+
 def main():
+    """Função principal do CLI."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["diff", "file"], default="diff")
     parser.add_argument("paths", nargs="*")
@@ -92,14 +118,21 @@ def main():
     else:
         blobs = []
         for p in args.paths:
-            code = Path(p).read_text("utf-8")
-            lang = "python" if p.endswith('.py') else 'typescript' if p.endswith('.ts') else 'javascript'
+            code = Path(p).read_text(encoding="utf-8")
+            if p.endswith('.py'):
+                lang = "python"
+            elif p.endswith('.ts'):
+                lang = "typescript"
+            else:
+                lang = "javascript"
             blobs.append(f"### {p}\n```{lang}\n{code}\n```")
-        report = call_openai("Revise os arquivos abaixo:\n" + "\n".join(blobs))
+        files_content = "\n".join(blobs)
+        report = call_openai(f"Revise os arquivos abaixo:\n{files_content}")
 
     print(report)
     if path := os.getenv("GITHUB_STEP_SUMMARY"):
-        Path(path).write_text(report)
+        Path(path).write_text(report, encoding="utf-8")
+
 
 if __name__ == "__main__":
     main()
