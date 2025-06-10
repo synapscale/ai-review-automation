@@ -59,12 +59,12 @@ Adicione no seu workflow `.github/workflows/ai-review.yml`:
 name: AI Code Review
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 jobs:
   ai-review:
-    uses: <org>/ai-review-bot/.github/workflows/callable.yml@v2.1
-    with:
+    uses: <org>/ai-review-automation/.github/workflows/callable.yml@main
+    secrets:
       openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 ```
 
@@ -73,9 +73,30 @@ jobs:
 Você também pode usar como uma action composite:
 
 ```yaml
-- uses: <org>/ai-review-bot@v2.1
-  with:
-    openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+steps:
+  - uses: <org>/ai-review-automation@main
+    with:
+      openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+```
+
+### Trigger por comentário
+
+Para executar apenas quando alguém comentar `/ai-review`:
+
+```yaml
+name: AI Review on Comment
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  ai-review:
+    if: |
+      github.event.issue.pull_request &&
+      github.event.comment.body == '/ai-review'
+    uses: <org>/ai-review-automation/.github/workflows/callable.yml@main
+    secrets:
+      openai_api_key: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 ## 🛠️ Modos de Uso
@@ -92,3 +113,25 @@ python scripts/ai_orchestrator.py --mode diff
 # Analisar arquivos específicos
 python scripts/ai_orchestrator.py --mode file src/app.py src/utils.py
 ```
+
+## 💡 Exemplos de Uso Local
+
+```bash
+# Executar via VS Code (Ctrl+Shift+P > Tasks: Run Task > AI Review Bot)
+# Ou via linha de comando:
+
+# Analisar mudanças staged
+python scripts/ai_orchestrator.py --mode diff
+
+# Analisar arquivos específicos
+python scripts/ai_orchestrator.py --mode file src/app.py tests/test_app.py
+
+# Com variáveis de ambiente
+OPENAI_API_KEY=sk-... python scripts/ai_orchestrator.py --mode diff
+```
+
+* Configure seu `OPENAI_API_KEY` no arquivo `.env` para uso local
+* Use o modo `diff` para analisar mudanças git staged
+* Use o modo `file` para análise de arquivos específicos
+
+---
