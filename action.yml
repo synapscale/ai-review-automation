@@ -9,26 +9,30 @@ inputs:
 runs:
   using: composite
   steps:
-    # Ambiente Python
+    # 1) Ambiente Python
     - uses: actions/setup-python@v5
       with:
         python-version: 3.11
         cache: pip
 
-    # Instalar deps do bot
+    # 2) Instalar dependências DO BOT
     - run: pip install -r "${{ github.action_path }}/requirements.txt"
       shell: bash
 
-    # Rodar orquestrador
-    - env:
+    # 3) Executar orquestrador (caminho via github.action_path)
+    - name: Run AI Orchestrator
+      env:
         OPENAI_API_KEY: ${{ inputs.openai_api_key }}
         GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-      run: python "${{ github.action_path }}/scripts/ai_orchestrator.py" --mode diff > review.md
+      run: |
+        python "${{ github.action_path }}/scripts/ai_orchestrator.py" \
+          --mode diff \
+          > review.md
       shell: bash
 
-    # Comentário sticky
+    # 4) Criar / atualizar comentário “sticky”
     - uses: marocchino/sticky-pull-request-comment@v2
       with:
-        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_TOKEN: ${{ github.token }}   # token correto p/ composite
         path: review.md

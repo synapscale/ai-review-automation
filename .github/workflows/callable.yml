@@ -15,32 +15,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣  Checkout da HEAD da PR (repo + branch do autor/fork)
-      - uses: actions/checkout@v4
+      # ①  Código da PR — branch do autor (seguro p/ forks)
+      - name: Checkout PR code
+        uses: actions/checkout@v4
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref:        ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0   # garante diff completo
+          fetch-depth: 0
 
-      # 2️⃣  Ambiente Python
+      # ②  Código do bot em subpasta
+      - name: Checkout AI Review Bot
+        uses: actions/checkout@v4
+        with:
+          repository: synapscale/ai-review-automation   # <— este repo
+          ref:        main                              # ou v2.1 quando taggear
+          path:       ai-review-bot
+
+      # ③  Ambiente Python + cache
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      # 3️⃣  Dependências
-      - run: pip install -r requirements.txt
+      # ④  Dependências do bot
+      - run: pip install -r ai-review-bot/requirements.txt
 
-      # 4️⃣  Executar orquestrador
+      # ⑤  Executar orquestrador
       - name: Run AI Orchestrator
         env:
           OPENAI_API_KEY: ${{ secrets.openai_api_key }}
           GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: python scripts/ai_orchestrator.py --mode diff > review.md
+        run: python ai-review-bot/scripts/ai_orchestrator.py --mode diff > review.md
 
-      # 5️⃣  Comentar ou atualizar comentário “sticky”
+      # ⑥  Comentar / atualizar relatório sticky
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           path: review.md
